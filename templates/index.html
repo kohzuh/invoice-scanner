@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Invoice Tracker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        :root {
+            color-scheme: light;
+            --bg: #f6f8fb;
+            --card: #ffffff;
+            --border: #d8e0ea;
+            --text: #17212b;
+            --muted: #5e6c7b;
+            --primary: #2457ff;
+            --primary-dark: #173db5;
+            --danger: #a53a3a;
+            --success: #16774b;
+            --shadow: 0 14px 34px rgba(25, 45, 72, 0.08);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+
+        .page {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            align-items: flex-start;
+            margin-bottom: 18px;
+        }
+
+        .header h1 {
+            margin: 0 0 8px;
+            font-size: 2rem;
+        }
+
+        .header p {
+            margin: 4px 0;
+            color: var(--muted);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 16px;
+        }
+
+        .card {
+            grid-column: span 12;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 18px;
+            box-shadow: var(--shadow);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .stat {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px;
+            background: linear-gradient(180deg, #ffffff, #f8fbff);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 1.7rem;
+            font-weight: 700;
+        }
+
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+        }
+
+        input[type="text"] {
+            flex: 1 1 340px;
+            min-width: 250px;
+            font-size: 1.2rem;
+            padding: 14px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(36, 87, 255, 0.1);
+        }
+
+        button {
+            border: none;
+            border-radius: 12px;
+            padding: 12px 16px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 700;
+            background: var(--primary);
+            color: white;
+        }
+
+        button:hover { background: var(--primary-dark); }
+        .secondary { background: #edf2ff; color: var(--primary-dark); }
+        .secondary:hover { background: #dfe8ff; }
+        .danger { background: #fff1f1; color: var(--danger); }
+        .danger:hover { background: #ffe4e4; }
+        .success { background: #ecfff6; color: var(--success); }
+        .success:hover { background: #dbffef; }
+
+        .flash {
+            border-left: 4px solid var(--primary);
+            background: #eef4ff;
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+        }
+
+        .meta-list, .scan-list {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .scan-list li { margin-bottom: 8px; }
+        .muted { color: var(--muted); }
+        .highlight { font-size: 1.1rem; font-weight: 700; }
+
+        .pill {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: #eff3f8;
+            color: var(--muted);
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+
+        @media (max-width: 800px) {
+            .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .header { flex-direction: column; }
+        }
+
+        @media (max-width: 520px) {
+            .page { padding: 14px; }
+            .stats { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="header">
+            <div>
+                <h1>Invoice Tracker</h1>
+                <p>Scan against the imported invoice and export a finalized count sheet.</p>
+                <p><span class="pill">Latest PDF: {{ pdf_name }}</span> <span class="pill">Active sheet: {{ invoice_file }}</span></p>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="flash">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="card">
+            <h2>Scan</h2>
+            <form method="post" action="/scan">
+                <div class="row">
+                    <input
+                        type="text"
+                        name="upc"
+                        id="upc"
+                        placeholder="Scan UPC here"
+                        autofocus
+                        autocomplete="off"
+                    >
+                </div>
+
+                <div class="row" style="margin-top: 10px;">
+                    <label>
+                        <input type="radio" name="action" value="add" checked>
+                        Add
+                    </label>
+
+                    <label style="margin-left: 16px;">
+                        <input type="radio" name="action" value="remove">
+                        Remove
+                    </label>
+
+                    <button type="submit" style="margin-left: 16px;">Scan</button>
+                </div>
+            </form>
+            <p class="muted">Keep the cursor in the scan box so the Zebra or scanner can type directly into it.</p>
+        </div>
+
+        <div class="card">
+            <h2>Summary</h2>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-label">Unique items</div>
+                    <div class="stat-value">{{ total_items }}</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Expected quantity</div>
+                    <div class="stat-value">{{ total_expected }}</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Scanned quantity</div>
+                    <div class="stat-value">{{ total_scanned }}</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Matched items</div>
+                    <div class="stat-value">{{ matched_items }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card" style="grid-column: span 6;">
+                <h2>Last scanned</h2>
+                {% if last_item %}
+                    <p><strong>UPC:</strong> {{ last_item["UPC"] }}</p>
+                    <p><strong>Description:</strong> {{ last_item["Desc"] }}</p>
+                    <p><strong>Expected (DRQty):</strong> <span class="highlight">{{ last_item["DRQty"] }}</span></p>
+                    <p><strong>Scanned (ScanQty):</strong> <span class="highlight">{{ last_item["ScanQty"] }}</span></p>
+                {% elif last_upc %}
+                    <p>UPC not found: <strong>{{ last_upc }}</strong></p>
+                {% else %}
+                    <p>No scans yet.</p>
+                {% endif %}
+            </div>
+
+            <div class="card" style="grid-column: span 6;">
+                <h2>Controls</h2>
+                <div class="row">
+                    <form method="post" action="/reload-pdf">
+                        <button type="submit" class="secondary">Import latest PDF</button>
+                    </form>
+                    <form method="post" action="/finalize">
+                        <button type="submit" class="success">Finalize Excel</button>
+                    </form>
+                    <form method="post" action="/save">
+                        <button type="submit" class="danger">Save Progress</button>
+                    </form>
+                </div>
+                <p class="muted">Drop a new invoice PDF into the input folder and use <strong>Import latest PDF</strong> to rebuild the sheet.</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Recent scans</h2>
+            {% if scan_log %}
+                <ul class="scan-list">
+                    {% for entry in scan_log %}
+                        <li>[{{ entry.time }}] {{ entry.action|upper }} {{ entry.upc }} — {{ entry.message }}</li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <p>No scan history yet.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        const upcInput = document.getElementById("upc");
+        function refocusInput() {
+            if (upcInput) {
+                upcInput.focus();
+            }
+        }
+        window.addEventListener("load", refocusInput);
+        window.addEventListener("click", refocusInput);
+    </script>
+</body>
+</html>
