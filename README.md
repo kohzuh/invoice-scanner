@@ -1,6 +1,8 @@
 # Invoice Tracker
 
-Invoice Tracker is a local Flask web app for scanning invoice items by UPC and tracking counted quantities against expected quantities.
+Invoice Tracker is a local Flask web app for scanning invoice items by UPC and tracking counted quantities against expected quantities. Made for work, hence why it only supports RCSS standardized documents. Example invoice included if you wanted to test it out.
+
+Intended to be used via a Zebra handheld scanner.
 
 ---
 
